@@ -3851,6 +3851,22 @@ func (s *Server) forwardTranslated(ctx context.Context, p provider.Provider, to 
 		if mayDropImageTool(p) && !s.fits(p.ID, imageToolRefused, to) {
 			req, _ = withoutImageToolReq(req)
 		}
+		// Claude Code's billing line leads the prompt it sends, and a
+		// request magpie rebuilds for another API carries it there as
+		// prompt text rather than as the header Anthropic reads past: its
+		// last field is a hash of the request's first user message, so the
+		// vendor's prompt cache matched nothing and every turn of a
+		// conversation was billed whole (Claude Code with a Command Code
+		// plan's DeepSeek, #1600). A request relayed as it came keeps it
+		// (#179), and Code Assist is left as it is: Antigravity answers
+		// its 429 to just this line, which magpie means to say rather
+		// than hide (codeassist.go, #666)
+		if to != provider.Anthropic && to != provider.CodeAssist {
+			if stripped := withoutBillingHeader(req.System); stripped != req.System {
+				r := *req
+				r.System, req = stripped, &r
+			}
+		}
 		// Anthropic's Messages are folded as they're built (objectSchema)
 		if to != provider.Anthropic && s.foldsRoots(p, model, to) {
 			req, _ = objectRootsReq(req)
