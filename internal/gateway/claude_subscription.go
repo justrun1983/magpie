@@ -2486,7 +2486,11 @@ func offeredTools(tools []Tool) map[string]bool {
 // so far as that message: kept, every check's instructions began with
 // another line, so none was read from the cache and each check wrote all of
 // it again at twice the input price, on the session's model (X, AncientTwo).
-// The run's Claude Code sends its own.
+// The run's Claude Code sends its own. A request magpie rebuilds for
+// another API is sent the prompt without the line too, since it is prompt
+// text there: its hash follows the turn, so the vendor's cache matched
+// nothing and every turn was billed whole (#1600, forwardTranslated and
+// serveCommandCode).
 func withoutBillingHeader(system string) string {
 	return billingHeader.ReplaceAllString(system, "")
 }

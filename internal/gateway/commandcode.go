@@ -74,6 +74,12 @@ func (s *Server) serveCommandCode(w http.ResponseWriter, r *http.Request, from p
 	if err != nil {
 		return writeError(w, from, 400, err.Error()), err.Error()
 	}
+	// Claude Code's billing line leads the prompt it sends, and this
+	// request carries the prompt itself rather than a header Anthropic
+	// reads past: kept, the line's hash — of the request's first user
+	// message — changed with every turn, so the vendor's prompt cache
+	// matched nothing and each turn was billed whole (#1600)
+	req.System = withoutBillingHeader(req.System)
 	// the vendor's own API is told the answer's format in words
 	req = req.inSystem()
 	req.Model = model
